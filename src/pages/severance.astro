@@ -1,0 +1,204 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+
+const faqs = [
+  {
+    q: '퇴직금은 몇 년을 일해야 받을 수 있나요?',
+    a: '같은 회사에서 계속근로기간이 1년 이상이고, 4주 평균 1주 소정근로시간이 15시간 이상이면 받을 수 있습니다. 정규직뿐 아니라 계약직, 아르바이트, 파견직도 조건을 충족하면 모두 대상입니다. 1년에서 하루라도 모자라면 법정 퇴직금은 발생하지 않습니다.',
+  },
+  {
+    q: '퇴사일은 마지막 근무일인가요, 그다음 날인가요?',
+    a: '법에서 말하는 퇴직일은 근로관계가 끝나는 날로, 보통 마지막으로 근무한 날의 다음 날입니다. 예를 들어 12월 31일까지 근무했다면 퇴직일은 다음 해 1월 1일입니다. 이 계산기도 퇴직일(마지막 근무일 다음 날)을 기준으로 재직일수와 평균임금 산정기간을 계산합니다.',
+  },
+  {
+    q: '상여금과 연차수당도 퇴직금에 포함되나요?',
+    a: '네. 정기적으로 받은 상여금과 퇴직 전 1년 동안 받은 연차수당은 평균임금에 포함됩니다. 다만 3개월 치 임금에 1년 치를 그대로 더하는 것이 아니라, 1년 동안 받은 금액의 3/12만큼을 더합니다. 퇴직하면서 정산받는 미사용 연차수당은 포함하지 않는 것이 원칙입니다.',
+  },
+  {
+    q: '퇴직금은 언제까지 받아야 하나요?',
+    a: '근로자퇴직급여 보장법에 따라 회사는 퇴직일로부터 14일 이내에 퇴직금을 지급해야 합니다. 당사자 간 합의로 기일을 연장할 수 있지만, 합의 없이 늦어지면 지연이자가 발생하며 고용노동부에 진정을 제기할 수 있습니다.',
+  },
+  {
+    q: '퇴직금에도 세금이 붙나요?',
+    a: '퇴직금에는 퇴직소득세와 지방소득세가 부과되지만 근속연수공제와 환산급여공제가 커서 일반 근로소득보다 세 부담이 훨씬 적습니다. 이 계산기는 세전 퇴직금을 보여 주며, 퇴직금을 IRP(개인형 퇴직연금) 계좌로 받아 연금으로 수령하면 퇴직소득세를 30~40% 줄일 수 있습니다.',
+  },
+  {
+    q: '평균임금이 통상임금보다 적으면 어떻게 되나요?',
+    a: '퇴직 직전 3개월 동안 휴직이나 결근 등으로 임금이 크게 줄어 평균임금이 통상임금보다 낮아지면, 근로기준법에 따라 통상임금을 평균임금으로 보고 퇴직금을 계산합니다. 또 육아휴직·산재 휴업 기간 등은 평균임금 산정기간에서 제외됩니다.',
+  },
+];
+---
+
+<CalculatorLayout slug="severance" faqs={faqs}>
+  <Fragment slot="calculator">
+    <form id="sev-form" class="grid gap-5" novalidate>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label for="startDate" class="field-label">입사일</label>
+          <input id="startDate" name="startDate" type="date" class="field-input" value="2023-01-01" required />
+        </div>
+        <div>
+          <label for="endDate" class="field-label">퇴직일</label>
+          <input id="endDate" name="endDate" type="date" class="field-input" value="2026-01-01" required />
+        </div>
+      </div>
+      <p class="field-hint -mt-3">퇴직일은 마지막 근무일의 <strong>다음 날</strong>입니다.</p>
+
+      <div>
+        <label for="monthlyWage" class="field-label">최근 3개월 월평균 급여 (세전)</label>
+        <div class="relative">
+          <input id="monthlyWage" name="monthlyWage" class="field-input pr-10" inputmode="numeric" data-number value="3,000,000" autocomplete="off" />
+          <span class="input-suffix">원</span>
+        </div>
+        <p class="field-hint">기본급과 매달 받는 수당(식대 포함)을 더한 금액</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label for="annualBonus" class="field-label">연간 상여금</label>
+          <div class="relative">
+            <input id="annualBonus" name="annualBonus" class="field-input pr-10" inputmode="numeric" data-number value="0" autocomplete="off" />
+            <span class="input-suffix">원</span>
+          </div>
+        </div>
+        <div>
+          <label for="annualLeavePay" class="field-label">연간 연차수당</label>
+          <div class="relative">
+            <input id="annualLeavePay" name="annualLeavePay" class="field-input pr-10" inputmode="numeric" data-number value="0" autocomplete="off" />
+            <span class="input-suffix">원</span>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <div class="result-box mt-6" aria-live="polite">
+      <p class="text-sm font-medium text-slate-600 dark:text-slate-400">예상 퇴직금 (세전)</p>
+      <p id="r-pay" class="result-main mt-1">0원</p>
+      <p id="r-note" class="mt-1 text-sm text-slate-600 dark:text-slate-400"></p>
+    </div>
+
+    <table class="data-table mt-5">
+      <caption class="sr-only">퇴직금 계산 요약</caption>
+      <tbody>
+        <tr><th scope="row">재직일수</th><td id="r-days">-</td></tr>
+        <tr><th scope="row">평균임금 산정기간</th><td id="r-period">-</td></tr>
+        <tr><th scope="row">3개월 임금 총액</th><td id="r-total">-</td></tr>
+        <tr><th scope="row">1일 평균임금</th><td id="r-daily">-</td></tr>
+      </tbody>
+    </table>
+
+    <details class="mt-6 rounded-xl border border-slate-200 p-4 dark:border-slate-700" open>
+      <summary class="cursor-pointer font-semibold text-slate-900 dark:text-slate-100">계산 과정 보기</summary>
+      <ol id="r-steps" class="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-slate-700 dark:text-slate-300"></ol>
+    </details>
+  </Fragment>
+
+  <h2>퇴직금이란?</h2>
+  <p>
+    퇴직금은 회사를 1년 이상 다닌 근로자가 퇴사할 때 회사가 의무적으로 지급하는 돈입니다. 「근로자퇴직급여 보장법」은 회사가
+    <strong>계속근로기간 1년에 대해 30일분 이상의 평균임금</strong>을 퇴직금으로 지급하도록 정하고 있습니다. 쉽게 말해 1년을 일할 때마다
+    약 한 달 치 월급이 퇴직금으로 쌓인다고 생각하면 됩니다.
+  </p>
+  <p>
+    퇴직금은 고용 형태와 관계없이 지급됩니다. 정규직은 물론 계약직, 아르바이트, 일용직이라도 같은 사업장에서 1년 이상 계속 근무했고
+    4주 평균 1주 소정근로시간이 15시간 이상이면 받을 수 있습니다. 반대로 주 15시간 미만으로 일하는 초단시간 근로자는 법정 퇴직금 대상이 아닙니다.
+    회사가 퇴직연금(DB형·DC형)에 가입했다면 지급 방식은 달라질 수 있지만, 확정급여형(DB)은 아래 공식과 같은 금액 이상을 받게 됩니다.
+  </p>
+
+  <h2>퇴직금 계산 공식</h2>
+  <p class="formula">퇴직금 = 1일 평균임금 × 30일 × (재직일수 ÷ 365)</p>
+  <p class="formula">1일 평균임금 = 퇴직 전 3개월 임금 총액 ÷ 그 3개월의 총일수</p>
+  <p>
+    <strong>평균임금</strong>은 퇴직일 이전 3개월 동안 받은 임금 총액을 그 기간의 달력상 일수(89~92일)로 나눈 금액입니다.
+    여기서 임금에는 기본급뿐 아니라 매달 받는 직책수당, 식대, 교통비처럼 근로의 대가로 정기적으로 받은 돈이 모두 들어갑니다.
+    1년 동안 받은 상여금과 연차수당은 금액의 3/12을 3개월 임금에 더합니다. 3개월만 보면 상여가 나온 달이 포함되는지에 따라
+    퇴직금이 크게 달라지므로 1년 치를 고르게 나누어 반영하는 것입니다.
+  </p>
+  <p>
+    <strong>재직일수</strong>는 입사일부터 퇴직일 전날까지의 일수입니다. 예를 들어 2023년 1월 1일에 입사해 2025년 12월 31일까지
+    근무했다면 퇴직일은 2026년 1월 1일이고, 재직일수는 윤년(2024년)을 포함해 1,096일입니다.
+  </p>
+
+  <Fragment slot="more">
+    <h2>계산 예시</h2>
+    <h3>예시 1. 3년 근속, 월급 300만원, 상여금 없음</h3>
+    <p>
+      2023년 1월 1일 입사, 2026년 1월 1일 퇴직(2025년 12월 31일까지 근무)한 경우입니다. 평균임금 산정기간은 2025년 10월 1일부터
+      12월 31일까지 92일이고, 이 기간 임금 총액은 900만원입니다. 1일 평균임금은 900만원 ÷ 92일 = 약 97,826원입니다.
+      퇴직금은 97,826원 × 30일 × (1,096일 ÷ 365) = <strong>약 881만 2천원</strong>입니다.
+    </p>
+    <h3>예시 2. 5년 근속, 월급 400만원, 연 상여금 400만원, 연차수당 120만원</h3>
+    <p>
+      2021년 3월 2일 입사, 2026년 3월 2일 퇴직한 경우 재직일수는 1,826일, 평균임금 산정기간은 2025년 12월 2일부터 2026년 3월 1일까지 90일입니다.
+      3개월 임금 1,200만원에 상여금 400만원의 3/12인 100만원, 연차수당 120만원의 3/12인 30만원을 더하면 1,330만원입니다.
+      1일 평균임금은 약 147,778원이고, 퇴직금은 <strong>약 2,217만 8천원</strong>입니다. 상여금과 연차수당을 반영하지 않았다면 약 2,001만원이므로,
+      빠뜨리지 않고 넣는 것만으로 200만원 이상 차이가 납니다.
+    </p>
+
+    <h2>주의사항</h2>
+    <ul>
+      <li><strong>퇴직 직전 급여 변동</strong>: 퇴직 전 3개월 동안 급여가 평소보다 낮았다면(무급휴직, 결근 등) 퇴직금이 줄어듭니다. 육아휴직, 산재 요양, 회사 사정에 의한 휴업 기간은 평균임금 산정에서 빠집니다.</li>
+      <li><strong>통상임금 하한</strong>: 평균임금이 통상임금보다 낮으면 통상임금을 기준으로 계산합니다.</li>
+      <li><strong>퇴직연금 가입 사업장</strong>: DC형(확정기여형)은 회사가 매년 적립한 금액과 운용 수익이 퇴직급여가 되므로 이 계산 결과와 다를 수 있습니다.</li>
+      <li><strong>퇴직소득세</strong>: 결과는 세전 금액입니다. 실제로는 퇴직소득세와 지방소득세를 뺀 금액을 받으며, 근속연수가 길수록 세율이 낮아집니다.</li>
+      <li><strong>지급 기한</strong>: 퇴직일로부터 14일 이내에 지급해야 하며, 받지 못했다면 고용노동부(국번 없이 1350)에 상담할 수 있습니다.</li>
+    </ul>
+    <p>
+      퇴직 후 새 직장의 조건을 비교하려면 <a href="/salary/">연봉 실수령액 계산기</a>로 세후 월급을, 단시간 근무를 계획 중이라면
+      <a href="/weekly-holiday-pay/">주휴수당 계산기</a>를 함께 활용해 보세요.
+    </p>
+  </Fragment>
+</CalculatorLayout>
+
+<script>
+  import { calculateSeverance } from '../lib/severance';
+  import { formatKoreanDate, parseDate } from '../lib/date';
+  import { formatNumber, formatWon } from '../lib/format';
+  import { bindNumberInputs, numberValue, onFormChange, setText, stringValue } from '../scripts/number-input';
+
+  const form = document.getElementById('sev-form') as HTMLFormElement;
+  const steps = document.getElementById('r-steps')!;
+  bindNumberInputs(form);
+
+  onFormChange(form, () => {
+    const start = parseDate(stringValue(form, 'startDate'));
+    const end = parseDate(stringValue(form, 'endDate'));
+    if (!start || !end || end <= start) {
+      setText('r-pay', '0원');
+      setText('r-note', '입사일과 퇴직일을 올바르게 입력하세요. 퇴직일은 입사일보다 뒤여야 합니다.');
+      steps.innerHTML = '';
+      return;
+    }
+    const r = calculateSeverance({
+      startDate: start,
+      endDate: end,
+      wageLast3Months: numberValue(form, 'monthlyWage') * 3,
+      annualBonus: numberValue(form, 'annualBonus'),
+      annualLeavePay: numberValue(form, 'annualLeavePay'),
+    });
+    const years = (r.serviceDays / 365).toFixed(1);
+
+    setText('r-pay', formatWon(r.severancePay));
+    setText(
+      'r-note',
+      r.eligible
+        ? `재직 약 ${years}년 · 1년당 약 ${formatWon(r.dailyAverageWage * 30)}`
+        : `재직일수가 ${formatNumber(r.serviceDays)}일로 1년(365일) 미만이라 법정 퇴직금 대상이 아닙니다.`,
+    );
+    setText('r-days', `${formatNumber(r.serviceDays)}일 (약 ${years}년)`);
+    setText('r-period', `${formatKoreanDate(r.periodStart)} ~ ${formatKoreanDate(r.periodEnd)} (${r.periodDays}일)`);
+    setText('r-total', formatWon(r.totalWage));
+    setText('r-daily', formatWon(r.dailyAverageWage));
+
+    const lines = [
+      `재직일수 = 퇴직일 − 입사일 = <b>${formatNumber(r.serviceDays)}일</b>`,
+      `평균임금 산정기간: 퇴직일 전 3개월 = ${formatKoreanDate(r.periodStart)} ~ ${formatKoreanDate(r.periodEnd)}, 총 <b>${r.periodDays}일</b>`,
+      `3개월 임금 총액 = 월급 × 3 ${formatWon(r.totalWage - r.bonusPortion - r.leavePortion)} + 상여금 × 3/12 ${formatWon(r.bonusPortion)} + 연차수당 × 3/12 ${formatWon(r.leavePortion)} = <b>${formatWon(r.totalWage)}</b>`,
+      `1일 평균임금 = ${formatWon(r.totalWage)} ÷ ${r.periodDays}일 = <b>${formatWon(r.dailyAverageWage)}</b>`,
+      r.eligible
+        ? `퇴직금 = ${formatWon(r.dailyAverageWage)} × 30일 × (${formatNumber(r.serviceDays)} ÷ 365) = <b>${formatWon(r.severancePay)}</b>`
+        : `재직일수 1년 미만 → 법정 퇴직금 <b>0원</b>`,
+    ];
+    steps.innerHTML = lines.map((l) => `<li>${l}</li>`).join('');
+  });
+</script>
