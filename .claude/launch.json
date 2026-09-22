@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "astro-dev",
+      "runtimeExecutable": "C:/Users/USER/AppData/Local/Microsoft/WinGet/Packages/OpenJS.NodeJS.LTS_Microsoft.Winget.Source_8wekyb3d8bbwe/node-v24.19.0-win-x64/node.exe",
+      "runtimeArgs": ["node_modules/astro/bin/astro.mjs", "dev", "--port", "4321"],
+      "port": 4321
+    }
+  ]
+}

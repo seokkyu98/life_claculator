@@ -9,7 +9,8 @@
     "preview": "astro preview",
     "check": "astro check",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "audit": "node tools/audit.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.4",
