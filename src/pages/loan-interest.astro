@@ -1,0 +1,259 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+
+const faqs = [
+  {
+    q: '원리금균등과 원금균등 중 어느 쪽이 유리한가요?',
+    a: '총이자만 보면 원금균등이 항상 적습니다. 원금을 빨리 갚아 이자가 붙는 잔액이 빠르게 줄기 때문입니다. 대신 초반 월 상환액이 커서 부담스럽습니다. 매달 같은 금액을 내며 생활비 계획을 세우고 싶다면 원리금균등, 초기 여유 자금이 있고 총이자를 줄이고 싶다면 원금균등이 알맞습니다.',
+  },
+  {
+    q: '만기일시상환은 언제 쓰나요?',
+    a: '대출 기간 동안 이자만 내고 만기에 원금을 한 번에 갚는 방식으로, 신용대출이나 마이너스통장, 전세자금대출에 많이 쓰입니다. 월 부담은 가장 적지만 원금이 줄지 않아 총이자는 가장 많습니다. 만기에 원금을 갚을 계획이 분명할 때 적합합니다.',
+  },
+  {
+    q: '변동금리 대출도 계산할 수 있나요?',
+    a: '이 계산기는 대출 기간 동안 금리가 고정된다고 가정합니다. 변동금리 대출은 보통 6개월이나 12개월마다 금리가 바뀌므로, 현재 금리로 계산한 뒤 금리가 1%p 오르거나 내린 경우도 함께 계산해 보면 상환액 변동 폭을 가늠할 수 있습니다.',
+  },
+  {
+    q: '은행 계산과 몇 원씩 차이가 나는 이유는?',
+    a: '은행은 실제 일수(예: 해당 월 30일 또는 31일 ÷ 365일)로 이자를 계산하는 경우가 많고, 원 단위 절사 방식도 다릅니다. 이 계산기는 매달 연 이자율 ÷ 12를 적용하고 원 단위로 반올림하기 때문에 회차별로 몇 원에서 수십 원 정도 차이가 날 수 있습니다.',
+  },
+  {
+    q: '중도상환하면 이자가 얼마나 줄어드나요?',
+    a: '중도상환하면 그만큼 잔액이 줄어 이후 이자가 줄어듭니다. 다만 대출 실행 후 보통 3년 이내에는 상환 금액의 0.5~1.4% 정도 중도상환수수료가 붙을 수 있습니다. 줄어드는 이자와 수수료를 비교해 유리한 쪽을 선택하세요. 남은 잔액과 기간을 이 계산기에 다시 입력하면 상환 후 이자를 확인할 수 있습니다.',
+  },
+  {
+    q: 'DSR은 어떤 상환액으로 계산하나요?',
+    a: 'DSR(총부채원리금상환비율)은 1년 동안 갚아야 할 모든 대출의 원금과 이자를 연 소득으로 나눈 비율입니다. 원리금균등 기준 월 상환액 × 12를 연 소득과 비교해 보면 대략적인 수준을 알 수 있습니다. 정확한 한도는 대출 종류별 산정 방식이 달라 금융기관에서 확인해야 합니다.',
+  },
+];
+---
+
+<CalculatorLayout slug="loan-interest" faqs={faqs}>
+  <Fragment slot="calculator">
+    <form id="loan-form" class="grid gap-5" novalidate>
+      <div>
+        <label for="principal" class="field-label">대출금</label>
+        <div class="relative">
+          <input id="principal" name="principal" class="field-input pr-10" inputmode="numeric" data-number value="100,000,000" autocomplete="off" />
+          <span class="input-suffix">원</span>
+        </div>
+        <p id="principal-hint" class="field-hint"></p>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label for="rate" class="field-label">연 이자율</label>
+          <div class="relative">
+            <input id="rate" name="rate" class="field-input pr-10" inputmode="decimal" data-number data-decimal value="4" autocomplete="off" />
+            <span class="input-suffix">%</span>
+          </div>
+        </div>
+        <div>
+          <label for="term" class="field-label">대출 기간</label>
+          <div class="flex gap-2">
+            <input id="term" name="term" class="field-input min-w-0" inputmode="numeric" data-number value="30" autocomplete="off" />
+            <select name="termUnit" aria-label="기간 단위" class="field-input !w-auto">
+              <option value="year" selected>년</option>
+              <option value="month">개월</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <fieldset>
+        <legend class="field-label">상환 방식</legend>
+        <div class="seg">
+          <label><input type="radio" name="method" value="annuity" checked />원리금균등</label>
+          <label><input type="radio" name="method" value="equalPrincipal" />원금균등</label>
+          <label><input type="radio" name="method" value="bullet" />만기일시</label>
+        </div>
+      </fieldset>
+    </form>
+
+    <div class="result-box mt-6" aria-live="polite">
+      <p id="r-label" class="text-sm font-medium text-slate-600 dark:text-slate-400">월 상환액</p>
+      <p id="r-main" class="result-main mt-1">0원</p>
+      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">총이자 <span id="r-interest" class="font-semibold">0원</span> · 총상환액 <span id="r-total" class="font-semibold">0원</span></p>
+    </div>
+
+    <h3 class="mt-6 mb-2 text-sm font-semibold text-slate-700 dark:text-slate-300">상환 방식별 비교</h3>
+    <div class="table-wrap">
+      <table class="data-table">
+        <caption class="sr-only">상환 방식별 첫 달 상환액과 총이자 비교</caption>
+        <thead>
+          <tr class="border-b border-slate-200 dark:border-slate-700">
+            <th scope="col">방식</th><th scope="col" class="!text-right">첫 달</th><th scope="col" class="!text-right">총이자</th>
+          </tr>
+        </thead>
+        <tbody id="r-compare"></tbody>
+      </table>
+    </div>
+
+    <details class="mt-6 rounded-xl border border-slate-200 p-4 dark:border-slate-700" open>
+      <summary class="cursor-pointer font-semibold text-slate-900 dark:text-slate-100">계산 과정 보기</summary>
+      <ol id="r-steps" class="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-slate-700 dark:text-slate-300"></ol>
+    </details>
+
+    <details id="schedule-box" class="mt-4 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+      <summary class="cursor-pointer font-semibold text-slate-900 dark:text-slate-100">회차별 상환 스케줄 보기</summary>
+      <div class="table-wrap mt-3 max-h-96 overflow-y-auto">
+        <table class="data-table text-xs sm:text-sm">
+          <caption class="sr-only">회차별 상환 스케줄</caption>
+          <thead class="sticky top-0 bg-white dark:bg-slate-900">
+            <tr><th scope="col">회차</th><th scope="col" class="!text-right">상환액</th><th scope="col" class="!text-right">원금</th><th scope="col" class="!text-right">이자</th><th scope="col" class="!text-right">잔액</th></tr>
+          </thead>
+          <tbody id="r-schedule"></tbody>
+        </table>
+      </div>
+    </details>
+  </Fragment>
+
+  <h2>대출 상환 방식 3가지</h2>
+  <p>
+    같은 금액을 같은 금리로 빌려도 <strong>어떤 방식으로 갚느냐에 따라 매달 내는 돈과 전체 이자가 크게 달라집니다</strong>.
+    대출 이자는 매달 남아 있는 원금(잔액)에 월 이자율을 곱해 계산하므로, 원금을 빨리 줄일수록 이자가 줄어듭니다.
+    대출을 받기 전에 세 가지 상환 방식의 차이를 알고 자신의 소득 흐름에 맞는 방식을 고르는 것이 중요합니다.
+  </p>
+  <ul>
+    <li><strong>원리금균등상환</strong>: 원금과 이자를 합친 금액을 매달 똑같이 냅니다. 초반에는 이자 비중이 크고 갈수록 원금 비중이 커집니다. 주택담보대출에서 가장 흔한 방식입니다.</li>
+    <li><strong>원금균등상환</strong>: 원금을 매달 똑같이 나눠 갚고, 이자는 줄어든 잔액에 붙습니다. 첫 달 부담이 가장 크고 매달 조금씩 줄어듭니다.</li>
+    <li><strong>만기일시상환</strong>: 매달 이자만 내다가 만기에 원금 전체를 한 번에 갚습니다. 신용대출, 전세자금대출에 많이 쓰입니다.</li>
+  </ul>
+
+  <h2>계산 공식</h2>
+  <p>월 이자율(r)은 연 이자율 ÷ 12, n은 전체 상환 개월 수, P는 대출금입니다.</p>
+  <p class="formula">원리금균등 월 상환액 = P × r × (1 + r)ⁿ ÷ ((1 + r)ⁿ − 1)</p>
+  <p class="formula">원금균등 월 상환액 = P ÷ n + (남은 원금 × r)</p>
+  <p class="formula">만기일시 월 이자 = P × r (마지막 달에 원금 P 추가)</p>
+  <p>
+    원리금균등 방식에서 매달 내는 금액은 같지만, 그중 이자는 "그달 잔액 × r"이고 나머지가 원금 상환분입니다. 그래서 대출 초기에는 상환액의
+    대부분이 이자로 나가고 원금은 조금씩만 줄어듭니다. 아래 스케줄 표를 열어 보면 회차가 지날수록 이자 비중이 줄어드는 것을 확인할 수 있습니다.
+  </p>
+
+  <Fragment slot="more">
+    <h2>계산 예시</h2>
+    <h3>예시 1. 주택담보대출 1억원, 연 4%, 30년</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>방식</th><th>첫 달 상환액</th><th>총이자</th></tr></thead>
+        <tbody>
+          <tr><td>원리금균등</td><td>477,415원</td><td>약 7,187만원</td></tr>
+          <tr><td>원금균등</td><td>611,111원</td><td>약 6,017만원</td></tr>
+          <tr><td>만기일시</td><td>333,333원</td><td>약 1억 2,000만원</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      원금균등은 첫 달 부담이 원리금균등보다 약 13만원 많지만, 30년 동안 이자를 약 1,170만원 덜 냅니다. 만기일시는 매달 부담이 가장 적은 대신
+      원금이 전혀 줄지 않아 이자가 대출금보다 많아집니다. 장기 대출일수록 상환 방식에 따른 이자 차이가 커집니다.
+    </p>
+    <h3>예시 2. 신용대출 3,000만원, 연 6%, 3년</h3>
+    <p>
+      원리금균등으로 갚으면 매달 <strong>912,658원</strong>씩, 총이자는 약 286만원입니다. 원금균등은 첫 달 983,333원에서 시작해 마지막 달 약 84만원으로
+      줄어들고 총이자는 약 278만원입니다. 만기일시는 매달 이자 150,000원만 내다가 3년 뒤 3,000만원을 갚아 총이자가 540만원으로 가장 많습니다.
+      기간이 짧으면 원리금균등과 원금균등의 이자 차이는 크지 않으므로, 월 부담이 일정한 원리금균등이 편리할 수 있습니다.
+    </p>
+
+    <h2>금리 1%p 차이가 만드는 결과</h2>
+    <p>
+      대출을 비교할 때는 상환 방식만큼 금리도 중요합니다. 1억원을 30년 원리금균등으로 빌릴 때 금리가 연 4%라면 월 상환액은 477,415원이지만,
+      연 5%라면 <strong>536,822원</strong>으로 매달 약 6만원이 늘어납니다. 30년 동안의 총이자는 약 7,187만원에서 약 9,326만원으로
+      <strong>2,100만원 이상</strong> 차이가 납니다. 금리를 0.1%p라도 낮출 수 있는 우대 조건(급여 이체, 카드 실적 등)을 꼼꼼히 챙기고,
+      여러 금융기관의 금리를 비교한 뒤 결정하는 것이 좋습니다.
+    </p>
+    <p>
+      상환 방식을 고를 때는 현재 소득과 앞으로의 소득 변화를 함께 고려하세요. 소득이 안정적이고 초기 부담을 감당할 수 있다면 원금균등이 이자를 가장
+      많이 줄여 줍니다. 사회초년생처럼 앞으로 소득이 늘어날 것으로 예상된다면 매달 같은 금액을 내는 원리금균등이 계획을 세우기 편합니다.
+    </p>
+
+    <h2>주의사항</h2>
+    <ul>
+      <li><strong>고정금리 가정</strong>: 대출 기간 내내 금리가 같다고 가정합니다. 변동금리는 금리 변동 시 상환액이 달라집니다.</li>
+      <li><strong>이자 계산 방식 차이</strong>: 금융기관은 실제 일수 기준으로 이자를 계산하거나 원 단위를 절사하는 경우가 있어 회차별로 소액 차이가 날 수 있습니다.</li>
+      <li><strong>부대 비용 제외</strong>: 중도상환수수료, 인지세, 보증료, 근저당 설정비 등은 포함하지 않았습니다.</li>
+      <li><strong>거치기간</strong>: 일정 기간 이자만 내는 거치기간이 있다면 거치기간은 만기일시, 이후는 선택한 방식으로 나눠 계산해야 합니다.</li>
+      <li><strong>대출 한도</strong>: 실제 대출 가능 금액은 DSR, LTV 등 규제와 개인 신용도에 따라 정해집니다.</li>
+    </ul>
+    <p>
+      대출 상환액이 월급에서 차지하는 비중을 보려면 <a href="/salary/">연봉 실수령액 계산기</a>로 세후 월급을 먼저 확인해 보세요.
+      퇴직금으로 대출을 갚을 계획이라면 <a href="/severance/">퇴직금 계산기</a>도 도움이 됩니다.
+    </p>
+  </Fragment>
+</CalculatorLayout>
+
+<script>
+  import { calculateLoan, METHOD_LABELS, type RepaymentMethod } from '../lib/loan';
+  import { formatNumber, formatWon } from '../lib/format';
+  import { bindNumberInputs, numberValue, onFormChange, setText, stringValue } from '../scripts/number-input';
+
+  const form = document.getElementById('loan-form') as HTMLFormElement;
+  const steps = document.getElementById('r-steps')!;
+  const compare = document.getElementById('r-compare')!;
+  const scheduleBody = document.getElementById('r-schedule')!;
+  const scheduleBox = document.getElementById('schedule-box') as HTMLDetailsElement;
+  bindNumberInputs(form);
+
+  const toKoreanUnit = (n: number) => {
+    const eok = Math.floor(n / 100_000_000);
+    const man = Math.floor((n % 100_000_000) / 10_000);
+    if (!eok && !man) return '';
+    return [eok ? `${formatNumber(eok)}억` : '', man ? `${formatNumber(man)}만` : ''].filter(Boolean).join(' ') + '원';
+  };
+
+  let lastSchedule: ReturnType<typeof calculateLoan>['schedule'] = [];
+  const renderSchedule = () => {
+    if (!scheduleBox.open) return;
+    scheduleBody.innerHTML = lastSchedule
+      .map(
+        (row) =>
+          `<tr><th scope="row">${row.month}</th><td>${formatNumber(row.payment)}</td><td>${formatNumber(row.principal)}</td><td>${formatNumber(row.interest)}</td><td>${formatNumber(row.balance)}</td></tr>`,
+      )
+      .join('');
+  };
+  scheduleBox.addEventListener('toggle', renderSchedule);
+
+  onFormChange(form, () => {
+    const principal = numberValue(form, 'principal');
+    const ratePercent = numberValue(form, 'rate');
+    const term = numberValue(form, 'term');
+    const months = Math.min(600, Math.round(stringValue(form, 'termUnit') === 'year' ? term * 12 : term));
+    const method = (stringValue(form, 'method') || 'annuity') as RepaymentMethod;
+    const input = { principal, annualRate: ratePercent / 100, months };
+
+    const results = (Object.keys(METHOD_LABELS) as RepaymentMethod[]).map((m) => calculateLoan({ ...input, method: m }));
+    const r = results.find((x) => x.method === method)!;
+
+    setText('principal-hint', toKoreanUnit(principal));
+    setText('r-label', method === 'equalPrincipal' ? '첫 달 상환액 (매달 줄어듦)' : method === 'bullet' ? '월 이자 (만기에 원금 상환)' : '월 상환액 (매달 동일)');
+    setText('r-main', formatWon(r.firstPayment));
+    setText('r-interest', formatWon(r.totalInterest));
+    setText('r-total', formatWon(r.totalPayment));
+
+    compare.innerHTML = results
+      .map(
+        (x) =>
+          `<tr${x.method === method ? ' class="font-semibold"' : ''}><th scope="row">${METHOD_LABELS[x.method]}</th><td>${formatWon(x.firstPayment)}</td><td>${formatWon(x.totalInterest)}</td></tr>`,
+      )
+      .join('');
+
+    const rPct = formatNumber(r.monthlyRate * 100, 4);
+    const lines = [
+      `월 이자율 r = 연 ${formatNumber(ratePercent, 3)}% ÷ 12 = <b>${rPct}%</b>, 상환 기간 n = <b>${months}개월</b>`,
+      method === 'annuity'
+        ? `월 상환액 = ${formatWon(principal)} × r × (1+r)<sup>${months}</sup> ÷ ((1+r)<sup>${months}</sup> − 1) = <b>${formatWon(r.firstPayment)}</b>`
+        : method === 'equalPrincipal'
+          ? `매달 원금 = ${formatWon(principal)} ÷ ${months} = <b>${formatWon(r.schedule[0]?.principal ?? 0)}</b>`
+          : `매달 이자 = ${formatWon(principal)} × ${rPct}% = <b>${formatWon(r.firstPayment)}</b>`,
+      r.schedule[0]
+        ? `1회차: 이자 ${formatWon(r.schedule[0].interest)} (잔액 × r) + 원금 ${formatWon(r.schedule[0].principal)} = <b>${formatWon(r.schedule[0].payment)}</b>`
+        : '',
+      r.schedule.length > 1
+        ? `마지막 ${months}회차 상환액 = <b>${formatWon(r.lastPayment)}</b>${method === 'bullet' ? ' (원금 포함)' : ''}`
+        : '',
+      `총이자 = 각 회차 이자의 합 = <b>${formatWon(r.totalInterest)}</b>, 총상환액 = 대출금 + 총이자 = <b>${formatWon(r.totalPayment)}</b>`,
+    ].filter(Boolean);
+    steps.innerHTML = lines.map((l) => `<li>${l}</li>`).join('');
+
+    lastSchedule = r.schedule;
+    renderSchedule();
+  });
+</script>
