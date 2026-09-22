@@ -1,0 +1,176 @@
+---
+import CalculatorLayout from '../layouts/CalculatorLayout.astro';
+import { SITE } from '../config';
+
+const faqs = [
+  {
+    q: '만 나이는 어떻게 계산하나요?',
+    a: '기준일 연도에서 태어난 연도를 뺀 뒤, 올해 생일이 아직 지나지 않았다면 1을 더 뺍니다. 생일 당일부터 한 살이 늘어납니다. 예를 들어 1995년 10월 15일생은 2026년 9월 22일에 2026 − 1995 − 1 = 30세이고, 10월 15일부터 31세가 됩니다.',
+  },
+  {
+    q: '만 나이 통일법은 언제부터 시행됐나요?',
+    a: '2023년 6월 28일부터 시행되었습니다. 이날부터 법령, 계약, 공문서 등에서 나이를 말할 때 특별한 규정이 없으면 만 나이를 쓰도록 민법과 행정기본법에 명시되었습니다. 그 전에도 민법상 나이는 만 나이였지만, 이 개정으로 일상과 행정에서 만 나이 사용이 원칙이 되었습니다.',
+  },
+  {
+    q: '술·담배 구매나 병역은 만 나이로 판단하나요?',
+    a: '아닙니다. 청소년보호법은 "연 나이"를 쓰기 때문에 만 19세가 되는 해의 1월 1일부터 술과 담배를 살 수 있습니다. 병역법도 연 나이 기준이라 19세가 되는 해에 병역판정검사 대상이 됩니다. 초등학교 입학 역시 생일이 아닌 출생 연도를 기준으로 합니다.',
+  },
+  {
+    q: '2월 29일생은 평년에 언제 한 살을 먹나요?',
+    a: '민법의 기간 계산 규정에 따르면 기간의 마지막 해에 해당하는 날이 없으면 그 달의 말일에 기간이 끝납니다. 따라서 2월 29일생은 평년에는 2월 28일이 지나고 3월 1일에 한 살이 늘어나는 것으로 계산합니다. 윤년에는 2월 29일 당일에 나이가 늘어납니다.',
+  },
+  {
+    q: '세는 나이와 연 나이는 무엇이 다른가요?',
+    a: '세는 나이는 태어나자마자 1살이 되고 매년 1월 1일에 한 살씩 늘어나는 전통적인 방식입니다. 연 나이는 현재 연도에서 출생 연도를 뺀 값으로, 세는 나이보다 항상 1살 적습니다. 만 나이는 생일을 기준으로 하므로 생일 전에는 연 나이보다 1살, 세는 나이보다 2살 적습니다.',
+  },
+  {
+    q: '띠는 양력 1월 1일에 바뀌나요?',
+    a: '전통적으로 띠는 음력 설날(또는 입춘)을 기준으로 바뀝니다. 그래서 1월이나 2월 초에 태어났다면 양력 출생 연도의 띠가 아니라 전년도 띠일 수 있습니다. 이 계산기는 양력 출생 연도로 띠를 표시하니 1~2월생은 음력 생일로 한 번 더 확인해 보세요.',
+  },
+];
+---
+
+<CalculatorLayout slug="age" faqs={faqs}>
+  <Fragment slot="calculator">
+    <form id="age-form" class="grid gap-5" novalidate>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label for="birthDate" class="field-label">생년월일</label>
+          <input id="birthDate" name="birthDate" type="date" class="field-input" value="1995-10-15" min="1900-01-01" required />
+        </div>
+        <div>
+          <label for="baseDate" class="field-label">기준일</label>
+          <input id="baseDate" name="baseDate" type="date" class="field-input" value={SITE.updatedAt} required />
+        </div>
+      </div>
+      <p class="field-hint -mt-3">기준일은 처음에 오늘 날짜로 자동 설정됩니다.</p>
+    </form>
+
+    <div class="result-box mt-6" aria-live="polite">
+      <p class="text-sm font-medium text-slate-600 dark:text-slate-400">만 나이</p>
+      <p id="r-age" class="result-main mt-1">-</p>
+      <p id="r-note" class="mt-1 text-sm text-slate-600 dark:text-slate-400"></p>
+    </div>
+
+    <table class="data-table mt-5">
+      <caption class="sr-only">나이 계산 결과</caption>
+      <tbody>
+        <tr><th scope="row">연 나이</th><td id="r-year">-</td></tr>
+        <tr><th scope="row">세는 나이</th><td id="r-korean">-</td></tr>
+        <tr><th scope="row">다음 생일</th><td id="r-next">-</td></tr>
+        <tr><th scope="row">살아온 날</th><td id="r-days">-</td></tr>
+        <tr><th scope="row">띠 (양력 기준)</th><td id="r-zodiac">-</td></tr>
+      </tbody>
+    </table>
+
+    <details class="mt-6 rounded-xl border border-slate-200 p-4 dark:border-slate-700" open>
+      <summary class="cursor-pointer font-semibold text-slate-900 dark:text-slate-100">계산 과정 보기</summary>
+      <ol id="r-steps" class="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-slate-700 dark:text-slate-300"></ol>
+    </details>
+  </Fragment>
+
+  <h2>만 나이란?</h2>
+  <p>
+    만 나이는 <strong>태어난 날을 0살로 보고 생일이 돌아올 때마다 한 살씩 더하는 나이</strong>입니다. 전 세계 대부분의 나라가 쓰는 방식이며,
+    우리나라 민법도 오래전부터 만 나이를 법적 나이로 정해 왔습니다. 하지만 일상에서는 태어나자마자 1살이 되고 새해마다 한 살씩 늘어나는 "세는 나이"가
+    널리 쓰이고, 일부 법률은 "연 나이"를 써서 같은 사람의 나이가 상황마다 달라지는 혼란이 있었습니다.
+  </p>
+  <p>
+    이런 혼란을 줄이기 위해 <strong>2023년 6월 28일부터 만 나이 통일법</strong>(민법·행정기본법 개정)이 시행되었습니다. 이제 법령이나 계약서,
+    공문서에서 나이를 말할 때 따로 정한 규정이 없으면 만 나이로 해석합니다. 예를 들어 "만 65세 이상 지원"이라고 쓰지 않고 "65세 이상"이라고만 적혀 있어도
+    만 65세를 뜻합니다. 보험 가입 나이, 정년, 각종 복지 혜택의 나이 기준도 원칙적으로 만 나이입니다.
+  </p>
+
+  <h2>나이 계산 공식</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>구분</th><th>계산 방법</th><th>주로 쓰이는 곳</th></tr></thead>
+      <tbody>
+        <tr><td>만 나이</td><td>기준연도 − 출생연도 (생일 전이면 −1)</td><td>법령, 계약, 행정, 의료</td></tr>
+        <tr><td>연 나이</td><td>기준연도 − 출생연도</td><td>병역법, 청소년보호법</td></tr>
+        <tr><td>세는 나이</td><td>기준연도 − 출생연도 + 1</td><td>일상 대화 (관습)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    만 나이는 생일 당일 0시부터 한 살이 늘어납니다. 민법은 나이를 계산할 때 태어난 날을 포함해서 세도록 정하고 있어, 생일 전날이 지나면
+    기간이 끝나고 생일이 되는 순간 새로운 나이가 시작됩니다. 살아온 날수 역시 태어난 날을 1일째로 셉니다.
+  </p>
+
+  <Fragment slot="more">
+    <h2>계산 예시</h2>
+    <h3>예시 1. 1995년 10월 15일생, 기준일 2026년 9월 22일</h3>
+    <p>
+      기준연도에서 출생연도를 빼면 2026 − 1995 = 31입니다. 2026년 생일(10월 15일)이 아직 지나지 않았으므로 1을 빼서 <strong>만 30세</strong>입니다.
+      연 나이는 31세, 세는 나이는 32세입니다. 다음 생일까지는 23일이 남았고, 10월 15일이 되면 만 31세가 됩니다.
+    </p>
+    <h3>예시 2. 2007년 3월 5일생, 기준일 2026년 1월 1일</h3>
+    <p>
+      2026 − 2007 = 19이지만 생일이 지나지 않았으므로 만 나이는 <strong>18세</strong>입니다. 그런데 청소년보호법은 연 나이를 쓰기 때문에
+      이 사람은 2026년 1월 1일부터 연 나이 19세로 술과 담배를 구매할 수 있습니다. 반면 만 나이 기준이 적용되는 계약이나 선거권(만 18세 이상)은
+      만 나이로 판단합니다. 이처럼 같은 날이라도 적용되는 법에 따라 나이 기준이 다르다는 점을 기억해 두세요.
+    </p>
+
+    <h2>만 나이 통일 후에도 예외가 있는 경우</h2>
+    <p>
+      만 나이 통일법 시행 이후에도 몇몇 법률은 행정 편의를 위해 연 나이를 그대로 씁니다. 대표적으로 <strong>청소년보호법</strong>(술·담배 구매,
+      유흥업소 출입), <strong>병역법</strong>(병역판정검사, 입영), <strong>초·중등교육법</strong>(초등학교 입학 연령)이 있습니다.
+      이런 법은 생일마다 대상이 바뀌면 관리가 어렵기 때문에 연도 단위로 나이를 봅니다. 반면 선거권, 운전면허, 국민연금 수급 나이 등은 만 나이 기준입니다.
+    </p>
+
+    <h2>주의사항</h2>
+    <ul>
+      <li><strong>기준일 확인</strong>: 서류 제출일, 계약일, 시험일 등 나이를 판단하는 기준일을 정확히 넣어야 합니다.</li>
+      <li><strong>개별 법령 우선</strong>: 특정 법률이나 약관이 연 나이 또는 다른 기준을 정하고 있다면 그 기준이 우선합니다.</li>
+      <li><strong>음력 생일</strong>: 법적 나이는 가족관계등록부의 양력 생년월일로 계산합니다. 음력 생일을 쓰는 경우 양력으로 바꿔 입력하세요.</li>
+      <li><strong>띠</strong>: 띠는 양력 출생연도 기준으로 표시하므로 설날 이전 출생자는 실제 띠와 다를 수 있습니다.</li>
+    </ul>
+    <p>
+      입사일부터 재직 기간을 따져 보고 싶다면 <a href="/severance/">퇴직금 계산기</a>에서 재직일수를 확인할 수 있고,
+      나이에 맞춰 대출 계획을 세운다면 <a href="/loan-interest/">대출 이자 계산기</a>도 활용해 보세요.
+    </p>
+  </Fragment>
+</CalculatorLayout>
+
+<script>
+  import { calculateAge } from '../lib/age';
+  import { formatKoreanDate, parseDate, toISODate, today } from '../lib/date';
+  import { formatNumber } from '../lib/format';
+  import { onFormChange, setText, stringValue } from '../scripts/number-input';
+
+  const form = document.getElementById('age-form') as HTMLFormElement;
+  const steps = document.getElementById('r-steps')!;
+  (form.elements.namedItem('baseDate') as HTMLInputElement).value = toISODate(today());
+
+  onFormChange(form, () => {
+    const birth = parseDate(stringValue(form, 'birthDate'));
+    const base = parseDate(stringValue(form, 'baseDate'));
+    const r = birth && base ? calculateAge(birth, base) : null;
+    if (!birth || !base || !r) {
+      setText('r-age', '-');
+      setText('r-note', '생년월일과 기준일을 올바르게 입력하세요. 기준일은 생년월일 이후여야 합니다.');
+      steps.innerHTML = '';
+      return;
+    }
+    const by = birth.getUTCFullYear();
+    const y = base.getUTCFullYear();
+
+    setText('r-age', `만 ${r.internationalAge}세`);
+    setText('r-note', r.birthdayPassed ? `올해 생일이 지났습니다.` : `올해 생일 전입니다. 생일이 지나면 만 ${r.internationalAge + 1}세가 됩니다.`);
+    setText('r-year', `${r.yearAge}세`);
+    setText('r-korean', `${r.koreanAge}세`);
+    setText('r-next', `${formatKoreanDate(r.nextBirthday)} (D-${formatNumber(r.daysUntilNextBirthday)}, 만 ${r.nextAge}세)`);
+    setText('r-days', `${formatNumber(r.daysLived)}일째`);
+    setText('r-zodiac', `${r.zodiac}띠`);
+
+    const lines = [
+      `기준연도 − 출생연도 = ${y} − ${by} = <b>${r.yearAge}</b> (연 나이)`,
+      r.birthdayPassed
+        ? `${y}년 생일이 지났거나 오늘이 생일 → 그대로 <b>만 ${r.internationalAge}세</b>`
+        : `${y}년 생일 전 → 1을 빼서 <b>만 ${r.internationalAge}세</b>`,
+      `세는 나이 = 연 나이 + 1 = <b>${r.koreanAge}세</b>`,
+      `살아온 날 = ${formatKoreanDate(birth)}부터 ${formatKoreanDate(base)}까지 <b>${formatNumber(r.daysLived)}일째</b> (태어난 날 포함)`,
+    ];
+    steps.innerHTML = lines.map((l) => `<li>${l}</li>`).join('');
+  });
+</script>
