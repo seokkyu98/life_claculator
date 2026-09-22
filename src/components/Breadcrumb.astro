@@ -1,0 +1,23 @@
+---
+interface Props {
+  items: { name: string; href?: string }[];
+}
+const { items } = Astro.props;
+---
+
+<nav aria-label="현재 위치" class="mb-4 text-sm text-slate-500 dark:text-slate-400">
+  <ol class="flex flex-wrap items-center gap-1.5">
+    {
+      items.map((item, i) => (
+        <li class="flex items-center gap-1.5">
+          {i > 0 && <span aria-hidden="true">›</span>}
+          {item.href ? (
+            <a href={item.href} class="hover:underline">{item.name}</a>
+          ) : (
+            <span aria-current="page" class="text-slate-700 dark:text-slate-300">{item.name}</span>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+</nav>

@@ -1,0 +1,108 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { SITE } from '../config';
+import { CALCULATORS, CATEGORIES, type CategoryId } from '../data/calculators';
+
+const categoryIds = Object.keys(CATEGORIES) as CategoryId[];
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: SITE.name,
+    url: SITE.url + '/',
+    inLanguage: 'ko',
+    description: SITE.description,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: CALCULATORS.map((c, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: c.title,
+      url: new URL(`/${c.slug}/`, SITE.url).href,
+    })),
+  },
+];
+---
+
+<BaseLayout title={`${SITE.name} - ${SITE.baseYear}년 연봉 실수령액·퇴직금·주휴수당 계산기`} description={SITE.description} jsonLd={jsonLd}>
+  <section class="py-4 text-center sm:py-8">
+    <h1 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-white">생활에 필요한 계산, 한 곳에서</h1>
+    <p class="mx-auto mt-3 max-w-xl text-lg leading-8 text-slate-600 dark:text-slate-400">
+      {SITE.baseYear}년 최신 요율로 계산하고, 결과가 어떻게 나왔는지 단계별로 설명해 드립니다.
+    </p>
+    <div class="relative mx-auto mt-6 max-w-lg">
+      <label for="calc-search" class="sr-only">계산기 검색</label>
+      <svg class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-slate-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      <input id="calc-search" type="search" class="field-input !rounded-full !py-3.5 !pl-12" placeholder="예: 연봉, 퇴직금, 알바, 대출" autocomplete="off" />
+    </div>
+  </section>
+
+  <p id="search-empty" class="hidden py-10 text-center text-slate-500" role="status">검색 결과가 없습니다. 다른 단어로 찾아보세요.</p>
+
+  {
+    categoryIds.map((id) => {
+      const items = CALCULATORS.filter((c) => c.category === id);
+      if (!items.length) return null;
+      return (
+        <section id={id} class="calc-group mt-10 scroll-mt-20" aria-labelledby={`cat-${id}`}>
+          <h2 id={`cat-${id}`} class="text-xl font-bold text-slate-900 dark:text-slate-100">{CATEGORIES[id].name}</h2>
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{CATEGORIES[id].description}</p>
+          <ul class="mt-4 grid gap-3 sm:grid-cols-2">
+            {items.map((c) => (
+              <li class="calc-card" data-search={[c.title, c.summary, ...c.keywords].join(' ').toLowerCase()}>
+                <a href={`/${c.slug}/`} class="card flex h-full gap-4 !p-5 transition hover:border-brand-500 hover:shadow-md">
+                  <span class="text-3xl" aria-hidden="true">{c.icon}</span>
+                  <span>
+                    <span class="block font-semibold text-slate-900 dark:text-slate-100">{c.title}</span>
+                    <span class="mt-1 block text-sm leading-6 text-slate-600 dark:text-slate-400">{c.summary}</span>
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      );
+    })
+  }
+
+  <section class="prose-ko mt-16">
+    <h2>{SITE.name}는 이렇게 만듭니다</h2>
+    <p>
+      월급날 통장에 찍힌 금액이 계약서의 연봉과 왜 다른지, 퇴사할 때 퇴직금은 얼마나 받는지, 아르바이트 시급에 주휴수당은 포함되는지처럼
+      생활 속에서 자주 마주치는 숫자 문제를 누구나 쉽게 확인할 수 있도록 만든 계산기 모음입니다.
+    </p>
+    <p>
+      모든 계산기는 <strong>{SITE.baseYear}년 기준 법령과 공식 요율</strong>을 바탕으로 하며, 사용한 요율마다 출처를 확인해 반영합니다.
+      숫자만 보여주는 데서 그치지 않고 결과가 어떤 공식으로 계산됐는지, 어떤 경우에 실제 금액과 달라질 수 있는지까지 함께 설명합니다.
+      입력한 값은 브라우저 안에서만 계산되고 서버로 전송되거나 저장되지 않습니다.
+    </p>
+    <p>
+      계산 결과는 참고용 추정치이며 법적 효력이 없습니다. 회사의 취업규칙, 개인별 공제 항목, 법령 개정에 따라 실제 금액은 달라질 수 있으니
+      중요한 결정을 내리기 전에는 관계 기관이나 전문가에게 확인하시길 권합니다. 요율 변경이나 오류를 발견하시면 <a href="/contact/">문의</a>로 알려 주세요.
+    </p>
+  </section>
+</BaseLayout>
+
+<script>
+  const input = document.getElementById('calc-search') as HTMLInputElement | null;
+  const cards = Array.from(document.querySelectorAll<HTMLElement>('.calc-card'));
+  const groups = Array.from(document.querySelectorAll<HTMLElement>('.calc-group'));
+  const empty = document.getElementById('search-empty');
+
+  input?.addEventListener('input', () => {
+    const terms = input.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    let visible = 0;
+    cards.forEach((card) => {
+      const text = card.dataset.search ?? '';
+      const match = terms.every((t) => text.includes(t));
+      card.hidden = !match;
+      if (match) visible++;
+    });
+    groups.forEach((g) => {
+      g.hidden = !g.querySelector('.calc-card:not([hidden])');
+    });
+    empty?.classList.toggle('hidden', visible > 0);
+  });
+</script>

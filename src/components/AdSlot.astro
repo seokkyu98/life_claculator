@@ -1,0 +1,28 @@
+---
+import { ADSENSE, isAdsenseEnabled } from '../config';
+
+interface Props {
+  position: 'top' | 'middle' | 'bottom';
+}
+const { position } = Astro.props;
+const slotId = ADSENSE.slots[position];
+const live = isAdsenseEnabled && slotId;
+---
+
+<div class:list={['ad-slot', { 'is-placeholder': !live }]} data-position={position} aria-hidden={live ? undefined : 'true'}>
+  {
+    live && (
+      <>
+        <ins
+          class="adsbygoogle"
+          style="display:block;width:100%"
+          data-ad-client={ADSENSE.client}
+          data-ad-slot={slotId}
+          data-ad-format="auto"
+          data-full-width-responsive="true"
+        />
+        <script is:inline>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      </>
+    )
+  }
+</div>
